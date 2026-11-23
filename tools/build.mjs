@@ -9,7 +9,9 @@ const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 
 // Reihenfolge: gemeinsame Teile zuerst, dann die Karten.
 const ORDER = [
+  'german-time.js',
   'common.js',
+  'ferraris.js',
   'i18n.js',
   'wizard.js',
   'editor-kit.js',
@@ -24,6 +26,7 @@ const ORDER = [
   'stats-i18n.js',
   'stats-card.js',
   'stats-editor.js',
+  'ferraris-card.js',
   'i18n-en.js',
   'i18n-nl.js',
   'i18n-fr.js',

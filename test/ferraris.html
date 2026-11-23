@@ -1,0 +1,8 @@
+<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ferraris-Testansicht</title>
+<style>body{margin:24px auto;max-width:1400px;padding:0 14px;background:#10111c;color:#e2e0ed;font:16px system-ui;--card-background-color:#1c1d29;--primary-text-color:#e2e0ed;--secondary-text-color:#b8b6c8;--primary-color:#748aff;--divider-color:#464758;--secondary-background-color:#252633;--warning-color:#ffd166}ha-card{display:block;background:var(--card-background-color)}h1{font-size:24px}energy-cockpit-ferraris-card{display:block}</style>
+<h1>Ferraris-Bilanz · Beispieldaten</h1><p>Diese lokale Testseite enthält keine persönlichen Messwerte.</p><energy-cockpit-ferraris-card></energy-cockpit-ferraris-card>
+<script src="../dist/energy-cockpit.js"></script><script>
+const card=document.querySelector('energy-cockpit-ferraris-card');
+card.setConfig({grid_import_total:'sensor.import',grid_export_total:'sensor.export',pv_totals:['sensor.pv1','sensor.pv2'],price_ct:40,billing_month:1,billing_day:1});
+card.hass={callWS:async r=>{const out={},start=Date.parse(r.start_time),end=Date.parse(r.end_time);for(const id of r.statistic_ids){const rows=[];for(let d=new EC_TIME.Date(start);+d<end;){const t=+d;rows.push({start:t,change:id==='sensor.import'?4:id==='sensor.export'?1:2});if(r.period==='hour')d=new EC_TIME.Date(t+3600000);else d.setDate(d.getDate()+1);}out[id]=rows;}return out;}};
+</script></html>

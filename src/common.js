@@ -1,5 +1,6 @@
 /* Gemeinsame Helfer für alle energy-cockpit-Karten. Wird im Bundle als globales Objekt WD bereitgestellt. */
 const WD = (() => {
+  const Date = EC_TIME.Date;
   const state = { loc: 'de-DE', lang: 'de', currency: 'EUR', nloc: 'de-DE', group: true, h12: undefined };
 
   // Sprache, Zahlen- und Zeitformat und Währung. Standard: wie in Home Assistant eingestellt (Profil, Allgemein).
@@ -203,5 +204,5 @@ const WD = (() => {
     return ka;
   })();
 
-  return { state, setLocale, hhmm, LANG_OPTIONS, PAL, palFor, colorVars, TH, rgb, num, watt, kwh, rawUnits, statUnits, val, price, THEMES, THEME_OPTIONS, themeCss, applyTheme, clock, nf, splitW, fW, fKwh, fPct, decOf, cur, esc, accentRgb, haNavigate, KA };
+  return { Date, state, setLocale, hhmm, LANG_OPTIONS, PAL, palFor, colorVars, TH, rgb, num, watt, kwh, rawUnits, statUnits, val, price, THEMES, THEME_OPTIONS, themeCss, applyTheme, clock, nf, splitW, fW, fKwh, fPct, decOf, cur, esc, accentRgb, haNavigate, KA };
 })();

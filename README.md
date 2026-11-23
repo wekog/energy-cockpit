@@ -1,3 +1,5 @@
+> **Fork wekog:** feste deutsche Zeit (`Europe/Berlin`) und zusätzliche, konfigurierbare Ferraris-Bilanz. Installation und Berechnung: [Fork-Dokumentation](docs/FORK.md). Die folgenden Originalhinweise und Verknüpfungen beziehen sich teilweise auf das Upstream-Projekt.
+
 <div align="center">
 
 <h1>Energy-Cockpit</h1>

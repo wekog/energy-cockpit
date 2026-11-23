@@ -39,7 +39,7 @@
         root.innerHTML = '';
         const bar = document.createElement('div');
         bar.style.cssText = 'display:flex;gap:6px;margin-bottom:10px';
-        [['wiz', 'Assistent'], ['form', 'Alle Felder']].forEach(([k, t]) => {
+        (def.formOnly ? [['form', 'Einstellungen']] : [['wiz', 'Assistent'], ['form', 'Alle Felder']]).forEach(([k, t]) => {
           const b = document.createElement('button');
           b.type = 'button';
           b.textContent = t;

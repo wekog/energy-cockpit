@@ -27,6 +27,7 @@ const context = vm.createContext({
 });
 
 const load = (file) => vm.runInContext(readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
+load('src/german-time.js');
 load('src/common.js');
 vm.runInContext('globalThis.WD = WD', context);
 load('src/i18n.js');
@@ -228,7 +229,7 @@ test('number format of the Home Assistant profile is respected, independent of t
 });
 
 test('time format of the Home Assistant profile is respected', () => {
-  const t = new Date(2026, 10, 19, 16, 49).getTime();
+  const t = Date.parse('2026-11-19T15:49:00Z'); // 16:49 in Deutschland, unabhängig vom Testrechner
   WD.setLocale({ language: 'en-GB', locale: { language: 'en-GB', time_format: 'am_pm' } });
   assert.match(WD.hhmm(t), /4:49\s?pm/i);
   WD.setLocale({ language: 'en-US', locale: { language: 'en-US', time_format: 'twenty_four' } });

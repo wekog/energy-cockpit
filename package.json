@@ -1,6 +1,6 @@
 {
   "name": "energy-cockpit",
-  "version": "0.45.2",
+  "version": "0.45.2-wekog.1",
   "private": true,
   "description": "energy-cockpit: Energiefluss-, GerÃ¤te- und Statistik-Karten fÃ¼r Home Assistant",
   "license": "MIT",
@@ -8,6 +8,6 @@
     "build": "node tools/build.mjs",
     "check": "node --check dist/energy-cockpit.js",
     "missing": "node tools/missing-translations.mjs",
-    "test": "node --test test/i18n.test.js"
+    "test": "node --test test/i18n.test.js test/german-time.test.js test/ferraris.test.js test/ferraris-card.test.js"
   }
 }

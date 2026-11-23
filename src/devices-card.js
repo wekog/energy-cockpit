@@ -1,5 +1,6 @@
 /* energy-cockpit-devices-card (abgeleitet aus devices-card v1.4.0) – Geräte & Verbrauch: Raum-Kacheln mit Live-Leistung, Schalten, Standby-Detektiv, Statistik Tag/Woche/Monat/Jahr mit stündlichem Strommix (PV/Batterie vs. Netz) */
 (() => {
+  const Date = EC_TIME.Date;
   const { nf, esc, rgb, haNavigate, T, setLocale, cur } = WD;
   // Leistung in W (kW und MW werden umgerechnet)
   const num = (h, id) => (h && id ? WD.watt(h, id) : null);

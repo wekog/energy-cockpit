@@ -1,7 +1,73 @@
-/*! energy-cockpit v0.45.2 - MIT License */
+/*! energy-cockpit v0.45.2-wekog.1 - MIT License */
+/* ---- german-time.js ---- */
+/* Kalenderzeit dieses Forks: immer Europe/Berlin. Kein Eingriff in window.Date. */
+const EC_TIME = (() => {
+  const NativeDate = Date, zone = 'Europe/Berlin';
+  const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+  const parts = (t) => {
+    if (!Number.isFinite(+t)) return null;
+    const p = Object.fromEntries(fmt.formatToParts(new NativeDate(+t)).filter((x) => x.type !== 'literal').map((x) => [x.type, Number(x.value)]));
+    return [p.year, p.month - 1, p.day, p.hour, p.minute, p.second, ((+t % 1000) + 1000) % 1000];
+  };
+  const utc = (p) => { const d = new NativeDate(0); d.setUTCFullYear(p[0], p[1], p[2]); d.setUTCHours(p[3] || 0, p[4] || 0, p[5] || 0, p[6] || 0); return +d; };
+  const offset = (t) => utc(parts(t)) - t;
+  const fromParts = (p, preferred) => {
+    if (p.some((x) => !Number.isFinite(x))) return NaN;
+    const wanted = utc(p), offsets = [...new Set([-86400000, 0, 86400000].map((n) => offset(wanted + n)))];
+    const candidates = offsets.map((o) => wanted - o);
+    const exact = candidates.filter((t) => utc(parts(t)) === wanted).sort((a, b) => a - b);
+    // Doppelte Herbststunde: Setter behalten den Offset; Konstruktoren wählen die frühere Stunde.
+    if (exact.length) return exact.find((t) => offset(t) === preferred) ?? exact[0];
+    // Nicht existente Frühlingsstunde vorwärts über die Lücke verschieben.
+    return candidates.filter((t) => utc(parts(t)) >= wanted).sort((a, b) => utc(parts(a)) - utc(parts(b)))[0] ?? NaN;
+  };
+  class GermanDate extends NativeDate {
+    constructor(...args) {
+      if (args.length > 1) {
+        const p = [Number(args[0]), Number(args[1]), args.length > 2 ? Number(args[2]) : 1, ...[3, 4, 5, 6].map((i) => args.length > i ? Number(args[i]) : 0)];
+        if (p[0] >= 0 && p[0] <= 99) p[0] += 1900;
+        super(fromParts(p));
+      } else if (typeof args[0] === 'string' && /^\d{4}-\d\d-\d\d[T ]\d\d:\d\d(?::\d\d(?:\.\d{1,3})?)?$/.test(args[0])) {
+        const m = args[0].match(/\d+/g).map(Number);
+        super(fromParts([m[0], m[1] - 1, m[2], m[3], m[4], m[5] || 0, Number((args[0].split('.')[1] || '').padEnd(3, '0'))]));
+      } else if (!args.length) super(); else super(args[0]);
+    }
+    getFullYear() { return parts(this)?.[0] ?? NaN; }
+    getMonth() { return parts(this)?.[1] ?? NaN; }
+    getDate() { return parts(this)?.[2] ?? NaN; }
+    getHours() { return parts(this)?.[3] ?? NaN; }
+    getMinutes() { return parts(this)?.[4] ?? NaN; }
+    getSeconds() { return parts(this)?.[5] ?? NaN; }
+    getMilliseconds() { return this.getUTCMilliseconds(); }
+    getDay() { const p = parts(this); return p ? new NativeDate(utc(p)).getUTCDay() : NaN; }
+    getYear() { return this.getFullYear() - 1900; }
+    getTimezoneOffset() { return Number.isFinite(+this) ? -offset(+this) / 60000 : NaN; }
+    _set(method, args) {
+      const p = parts(this); if (!p) return this.setTime(NaN);
+      const wall = new NativeDate(utc(p)); wall[method](...args);
+      return this.setTime(fromParts([wall.getUTCFullYear(), wall.getUTCMonth(), wall.getUTCDate(), wall.getUTCHours(), wall.getUTCMinutes(), wall.getUTCSeconds(), wall.getUTCMilliseconds()], offset(+this)));
+    }
+    setFullYear(...a) { return this._set('setUTCFullYear', a); }
+    setMonth(...a) { return this._set('setUTCMonth', a); }
+    setDate(...a) { return this._set('setUTCDate', a); }
+    setHours(...a) { return this._set('setUTCHours', a); }
+    setMinutes(...a) { return this._set('setUTCMinutes', a); }
+    setSeconds(...a) { return this._set('setUTCSeconds', a); }
+    setMilliseconds(...a) { return this._set('setUTCMilliseconds', a); }
+    toDateString() { return Number.isFinite(+this) ? this.toLocaleDateString('en-GB', { weekday: 'short', year: 'numeric', month: 'short', day: '2-digit' }) : 'Invalid Date'; }
+    toLocaleDateString(locale, options) { return super.toLocaleDateString(locale, { ...options, timeZone: zone }); }
+    toLocaleTimeString(locale, options) { return super.toLocaleTimeString(locale, { ...options, timeZone: zone }); }
+    toLocaleString(locale, options) { return super.toLocaleString(locale, { ...options, timeZone: zone }); }
+    static parse(text) { return +new GermanDate(text); }
+  }
+  return { Date: GermanDate, zone, parts, fromParts };
+})();
+
+
 /* ---- common.js ---- */
 /* Gemeinsame Helfer für alle energy-cockpit-Karten. Wird im Bundle als globales Objekt WD bereitgestellt. */
 const WD = (() => {
+  const Date = EC_TIME.Date;
   const state = { loc: 'de-DE', lang: 'de', currency: 'EUR', nloc: 'de-DE', group: true, h12: undefined };
 
   // Sprache, Zahlen- und Zeitformat und Währung. Standard: wie in Home Assistant eingestellt (Profil, Allgemein).
@@ -205,7 +271,47 @@ const WD = (() => {
     return ka;
   })();
 
-  return { state, setLocale, hhmm, LANG_OPTIONS, PAL, palFor, colorVars, TH, rgb, num, watt, kwh, rawUnits, statUnits, val, price, THEMES, THEME_OPTIONS, themeCss, applyTheme, clock, nf, splitW, fW, fKwh, fPct, decOf, cur, esc, accentRgb, haNavigate, KA };
+  return { Date, state, setLocale, hhmm, LANG_OPTIONS, PAL, palFor, colorVars, TH, rgb, num, watt, kwh, rawUnits, statUnits, val, price, THEMES, THEME_OPTIONS, themeCss, applyTheme, clock, nf, splitW, fW, fKwh, fPct, decOf, cur, esc, accentRgb, haNavigate, KA };
+})();
+
+
+/* ---- ferraris.js ---- */
+/* Reine Berechnungen. Zähler und Tarif stehen ausschließlich in der HA-Konfiguration. */
+const EC_FERRARIS = (() => {
+  const Date = EC_TIME.Date;
+  const stamp = (v) => typeof v === 'number' ? v : Date.parse(v);
+  const boundary = (year, month, day) => new Date(year, month - 1, Math.min(day, new Date(year, month, 0).getDate()));
+  const windowFor = (period, now, month = 1, day = 1) => {
+    const d = new Date(now);
+    if (!Number.isInteger(month) || month < 1 || month > 12 || !Number.isInteger(day) || day < 1 || day > new Date(2000, month, 0).getDate()) throw new Error('Ungültiger Abrechnungsbeginn');
+    let start;
+    if (period === 'day') start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    else if (period === 'month') start = new Date(d.getFullYear(), d.getMonth(), 1);
+    else if (period === 'year') start = new Date(d.getFullYear(), 0, 1);
+    else if (period === 'billing') { start = boundary(d.getFullYear(), month, day); if (+start > +d) start = boundary(d.getFullYear() - 1, month, day); }
+    else throw new Error('Unbekannter Zeitraum');
+    return { start: +start, end: +d, period: period === 'day' ? 'hour' : 'day' };
+  };
+  const balance = (imported, exported, solar, priceCt) => {
+    if (![imported, exported, solar].every((v) => typeof v === 'number' && Number.isFinite(v) && v >= 0)) throw new Error('Ungültige Energiemenge');
+    const rate = typeof priceCt === 'number' && Number.isFinite(priceCt) && priceCt >= 0 ? priceCt / 100 : null, net = imported - exported;
+    return { imported, exported, solar, net, home: solar + net, solarValue: rate === null ? null : solar * rate, netCost: rate === null ? null : net * rate };
+  };
+  const aggregate = (result, config, win) => {
+    const solarIds = [...new Set(config.pv_totals)], ids = [config.grid_import_total, config.grid_export_total, ...solarIds];
+    if (new Set(ids).size !== ids.length) throw new Error('Netz- und PV-Zähler müssen unterschiedliche Quellen sein');
+    const maps = Object.fromEntries(ids.map((id) => [id, new Map((result[id] || []).filter((r) => stamp(r.start) >= win.start && stamp(r.start) < win.end && typeof r.change === 'number' && Number.isFinite(r.change) && r.change >= 0).map((r) => [stamp(r.start), r.change]))]));
+    const slots = [...new Set(ids.flatMap((id) => [...maps[id].keys()]))].sort((a, b) => a - b), common = slots.filter((t) => ids.every((id) => maps[id].has(t)));
+    const known = new Set(common); let missing = slots.length - common.length;
+    for (let d = new Date(win.start); +d < win.end;) {
+      const t = +d; if (win.period === 'hour') d = new Date(t + 3600000); else d.setDate(d.getDate() + 1);
+      if (+d <= win.end && !known.has(t)) missing++;
+    }
+    if (!common.length) return { samples: 0, missing, complete: false };
+    const sum = (id) => common.reduce((n, t) => n + maps[id].get(t), 0);
+    return { ...balance(sum(config.grid_import_total), sum(config.grid_export_total), solarIds.reduce((n, id) => n + sum(id), 0), config.price_ct), samples: common.length, missing, complete: missing === 0, first: common[0] };
+  };
+  return { windowFor, balance, aggregate };
 })();
 
 
@@ -606,7 +712,7 @@ const WD = (() => {
         root.innerHTML = '';
         const bar = document.createElement('div');
         bar.style.cssText = 'display:flex;gap:6px;margin-bottom:10px';
-        [['wiz', 'Assistent'], ['form', 'Alle Felder']].forEach(([k, t]) => {
+        (def.formOnly ? [['form', 'Einstellungen']] : [['wiz', 'Assistent'], ['form', 'Alle Felder']]).forEach(([k, t]) => {
           const b = document.createElement('button');
           b.type = 'button';
           b.textContent = t;
@@ -1029,6 +1135,7 @@ WD.D3 = { stack, solar, meter, house, boiler, wmeter, css, draw, ring, roof };
 /* ---- flow-card.js ---- */
 /* energy-cockpit-flow-card: animierter Energiefluss. Hilfsfunktionen kommen aus common.js und i18n.js. */
 (() => {
+  const Date = EC_TIME.Date;
 WD.addStrings({ 'why.q.bal': 'Warum kein Netzbezug?', 'why.q.baldis': 'Warum entlädt die Batterie?', 'why.q.balchg': 'Warum lädt die Batterie?', 'why.bal.both': 'Solar liefert {pv} und die Batterie {bat}. Zusammen decken sie das Haus ({home}).', 'why.bal.sun': 'Solar liefert {pv} und deckt das Haus ({home}) allein.', 'why.bal.bat': 'Die Batterie ({soc} %) liefert {bat} und deckt das Haus ({home}) allein.', 'why.bal.low': 'Das Haus braucht gerade kaum Strom ({home}).', 'why.bal.dis': 'Solar reicht allein nicht für {home}. Die Batterie liefert den Rest ({bat}), Ladestand {soc} %.', 'why.bal.chg': 'Solar liefert mehr, als das Haus braucht. Der Überschuss ({w}) lädt die Batterie.', 'why.imp': 'Warum {w} Netzbezug?', 'why.exp': 'Warum {w} Einspeisung?', 'why.bal': 'Netz ausgeglichen', 'why.asof': 'Stand {t} Uhr', 'why.cover': 'Das Haus braucht {home}. Gedeckt von: {parts}', 'why.solar': 'Solar', 'why.batt': 'Batterie', 'why.grid': 'Netz', 'why.bm': 'Speicher lädt', 'why.row.pv': 'Solar erzeugt', 'why.row.home': 'Haus braucht', 'why.row.chg': 'Batterie lädt', 'why.row.exp': 'Einspeisung', 'why.q.bat': 'Warum nicht aus der Batterie?', 'why.q.sun': 'Warum nicht Solar?', 'why.q.feed': 'Warum nicht in die Batterie?', 'why.q.tip': 'Tipp', 'why.q.hint': 'Hinweis', 'why.bat.empty': 'Die Batterie ist leer ({soc} %, Entladegrenze {res} %).', 'why.bat.idle': 'Die Batterie hat {soc} %, gibt aber gerade keinen Strom ab. Betriebsart oder Sperrzeit im Speicher prüfen.', 'why.bat.dis': 'Die Batterie liefert bereits {w}.', 'why.sun.night': 'Es ist Nacht. Sonnenaufgang um {t} Uhr.', 'why.sun.fc': ' Prognose morgen {kwh} kWh.', 'why.sun.low': 'Solar liefert gerade nur {w}.', 'why.sun.zero': 'Solar liefert gerade nichts.', 'why.sun.wx': ' Wetter: {cnd}.', 'why.sun.part': 'Solar liefert {pv}, das reicht nicht für {home}.', 'why.rest': 'Ein großer Teil ({w}) ist keinem Verbraucher zugeordnet. Trage weitere Verbraucher in die Karte ein.', 'why.full': 'Die Batterie ist voll ({soc} %) und lädt nicht mehr.', 'why.notfull': 'Die Batterie lädt gerade nicht, obwohl noch Platz ist ({soc} %). Betriebsart im Speicher prüfen.', 'why.charging': 'Die Batterie lädt bereits mit {w}.', 'why.tip.sug': '{w} Überschuss: Jetzt passt {names}.', 'why.bal.txt': 'Solar und Batterie decken das Haus ({home}), ohne Netz.', 'why.none': 'Gerade keine Daten für eine Erklärung.', 'why.top': 'davon {n} {w}', 'bat.in2': ' (Solar 2 <b>{pv}</b> · Haus <b>{ac}</b>)', 'xt.alarm': 'Alarm', 'sky.sunny': 'Sonnig', 'sky.clear-night': 'Klare Nacht', 'sky.partlycloudy': 'Teils bewölkt', 'sky.cloudy': 'Bewölkt', 'sky.fog': 'Nebel', 'sky.rainy': 'Regen', 'sky.pouring': 'Starkregen', 'sky.snowy': 'Schnee', 'sky.snowy-rainy': 'Schneeregen', 'sky.lightning': 'Gewitter', 'sky.lightning-rainy': 'Gewitter mit Regen', 'sky.hail': 'Hagel', 'sky.windy': 'Windig', 'sky.windy-variant': 'Windig und bewölkt', 'sky.exceptional': 'Ausnahmewetter', 'sky.cloud': 'Bewölkung', 'sky.wind': 'Wind', 'sky.nofc': 'Keine Vorhersage von der Wetter-Entität', 'ban.tonet0': 'Strom fließt ins Netz', 'stat.home': 'Haus heute', 'close': 'Schließen' });
 // Warum? für Solar und Batterie (#50)
 WD.addStrings({
@@ -3632,6 +3739,7 @@ WD.addStrings({
 /* ---- devices-card.js ---- */
 /* energy-cockpit-devices-card (abgeleitet aus devices-card v1.4.0) – Geräte & Verbrauch: Raum-Kacheln mit Live-Leistung, Schalten, Standby-Detektiv, Statistik Tag/Woche/Monat/Jahr mit stündlichem Strommix (PV/Batterie vs. Netz) */
 (() => {
+  const Date = EC_TIME.Date;
   const { nf, esc, rgb, haNavigate, T, setLocale, cur } = WD;
   // Leistung in W (kW und MW werden umgerechnet)
   const num = (h, id) => (h && id ? WD.watt(h, id) : null);
@@ -4533,6 +4641,7 @@ header{display:flex;align-items:center;flex-wrap:wrap;position:relative;margin-b
    getrennt nach Bereichen (Zählern) UND nach Herkunft der Energie (Netz, Batterie, PV). Der Herkunfts-Mix wird stundenweise aus dem Haus-Mix bestimmt:
    in jeder Stunde bekommt jeder Verbraucher denselben Anteil aus Netz, Batterie und PV wie das ganze Haus. */
 (() => {
+  const Date = EC_TIME.Date;
   const { nf, esc, rgb, T, setLocale, cur } = WD;
   const monthShort = (m) => new Date(2020, m, 1).toLocaleDateString(WD.state.loc, { month: 'short' }).replace(/\.$/, '');
   const monthLong = (m) => new Date(2020, m, 1).toLocaleDateString(WD.state.loc, { month: 'long' });
@@ -5339,6 +5448,7 @@ WD.addStrings({
 /* ---- stats-card.js ---- */
 /* energy-cockpit-stats-card (abgeleitet aus energy-stats-card v1.0.1) – Statistik: Geld, Amortisation, Grundlast, Monatsvergleich, Batterie */
 (() => {
+  const Date = EC_TIME.Date;
   const { nf, haNavigate, T, setLocale, cur, esc } = WD;
   const fEur = (v) => (v === null || v === undefined || !isFinite(v) ? '—' : nf(v, Math.abs(v) < 100 ? 2 : 0));
   const fKwh = (v, d) => (v === null || v === undefined || !isFinite(v) ? '—' : nf(v, typeof d === 'number' ? d : Math.abs(v) >= 100 ? 0 : 1));
@@ -6640,6 +6750,84 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
     steps,
     form: () => WD.statsForm(),
   });
+})();
+
+
+/* ---- ferraris-card.js ---- */
+/* Zusätzliche Bilanzkarte; die physische Aufteilung der Originalkarten bleibt getrennt. */
+(() => {
+  const Date = EC_TIME.Date, { esc } = WD;
+  const PERIODS = { day: 'Heute', month: 'Monat', year: 'Jahr', billing: 'Abrechnung' };
+  class FerrarisCard extends HTMLElement {
+    constructor() {
+      super(); this.attachShadow({ mode: 'open' }); this.period = 'day'; this.seq = 0;
+      this.shadowRoot.addEventListener('click', (ev) => {
+        const button = ev.target.closest('button[data-period]');
+        if (button && PERIODS[button.dataset.period] && this.period !== button.dataset.period) {
+          this.period = button.dataset.period; this.data = null; this.loadedKey = null; this.draw(); this.refresh();
+        }
+      });
+    }
+    setConfig(config) {
+      if (!config.grid_import_total || !config.grid_export_total || !Array.isArray(config.pv_totals) || !config.pv_totals.length) throw new Error('Netzbezug, Einspeisung und mindestens einen PV-Ertragszähler auswählen');
+      if (config.price_ct !== undefined && (typeof config.price_ct !== 'number' || !Number.isFinite(config.price_ct) || config.price_ct < 0)) throw new Error('Arbeitspreis in Cent/kWh angeben');
+      const c = { billing_month: 1, billing_day: 1, ...config };
+      EC_FERRARIS.windowFor('billing', Date.now(), c.billing_month, c.billing_day);
+      if (new Set([c.grid_import_total, c.grid_export_total, ...c.pv_totals]).size !== c.pv_totals.length + 2) throw new Error('Jede Energiequelle nur einmal auswählen');
+      this.config = c; this.data = null; this.error = null; this.loadedKey = null; this.seq++;
+      if (PERIODS[c.start_period]) this.period = c.start_period;
+      this.draw(); if (this.isConnected) this.refresh();
+    }
+    set hass(hass) { this.h = hass; if (this.isConnected) this.refresh(); }
+    connectedCallback() { this.draw(); clearInterval(this.timer); this.timer = setInterval(() => this.refresh(), 60000); this.refresh(); }
+    disconnectedCallback() { clearInterval(this.timer); this.seq++; this.loadingKey = null; }
+    getCardSize() { return 7; }
+    getGridOptions() { return { columns: 12, rows: 'auto', min_columns: 6 }; }
+    static getConfigElement() { return document.createElement('energy-cockpit-ferraris-card-editor'); }
+    static getStubConfig() { return { pv_totals: [], billing_month: 1, billing_day: 1 }; }
+    async refresh() {
+      if (!this.config || !this.h) return;
+      const now = Date.now(), c = this.config, w = EC_FERRARIS.windowFor(this.period, now, c.billing_month, c.billing_day);
+      const key = JSON.stringify([this.period, w.start, Math.floor(now / 300000), c]);
+      if (key === this.loadedKey || key === this.loadingKey) return;
+      const seq = ++this.seq; this.loadingKey = key;
+      try {
+        const result = await this.h.callWS({ type: 'recorder/statistics_during_period', start_time: new Date(w.start).toISOString(), end_time: new Date(w.end).toISOString(), period: w.period, statistic_ids: [c.grid_import_total, c.grid_export_total, ...c.pv_totals], types: ['change'], units: { energy: 'kWh' } });
+        if (seq !== this.seq) return;
+        this.data = EC_FERRARIS.aggregate(result, c, w); this.win = w; this.error = null; this.loadedKey = key;
+      } catch (err) { if (seq === this.seq) { this.error = 'Die Statistik ist derzeit nicht abrufbar. Bitte später erneut versuchen.'; this.data = null; this.loadedKey = key; } }
+      finally { if (seq === this.seq) { this.loadingKey = null; this.draw(); } }
+    }
+    draw() {
+      if (!this.config) return;
+      const c = this.config, d = this.data, number = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const energy = (n) => number.format(n) + ' kWh', money = (n) => n === null ? 'Preis fehlt' : number.format(n) + ' €';
+      const date = (t) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const tile = (label, value) => '<div class="tile"><div class="label">' + esc(label) + '</div><div class="value">' + esc(value) + '</div></div>';
+      let body = this.error ? '<p role="status">' + esc(this.error) + '</p>' : !d ? '<p role="status">Statistik wird geladen …</p>' : !d.samples ? '<p role="status">Für diesen Zeitraum liegen noch keine gemeinsam auswertbaren Statistikwerte vor.</p>' :
+        (!d.complete ? '<p class="warning" role="status"><b>Teilbilanz:</b> Es fehlen Statistikintervalle. Die folgenden Werte enthalten nur gemeinsam verfügbare Daten ab ' + esc(date(d.first)) + '; sie sind keine vollständige Abrechnung.</p>' : '') +
+        '<div class="tiles">' + tile('Nettoänderung Ferraris', energy(d.net)) + tile('Netto-Arbeitskosten', money(d.netCost)) + tile('Wert der Solarproduktion', money(d.solarValue)) + '</div>' +
+        '<div class="details">' + tile('Hausverbrauch, berechnet', energy(d.home)) + tile('Solarproduktion', energy(d.solar)) + tile('Netzbezug', energy(d.imported)) + tile('Einspeisung', energy(d.exported)) + '</div>' +
+        '<p class="period">' + esc(date(this.win.start)) + ' bis ' + esc(date(this.win.end)) + ' · Europe/Berlin · bis zum letzten gemeinsamen Statistikintervall</p>' +
+        (d.home < 0 ? '<p class="warning">Die Quellen ergeben einen negativen Hausverbrauch. Messintervalle und Zuordnung prüfen.</p>' : '') +
+        (d.net < 0 ? '<p>Der negative Nettowert zeigt einen rechnerischen Erzeugungsüberschuss im gewählten Zeitraum, keine zugesagte Auszahlung.</p>' : '');
+      this.shadowRoot.innerHTML = '<style>:host{display:block}ha-card{padding:22px;border-radius:26px;overflow:hidden}h2{font-size:1.2rem;margin:0 0 16px}.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}button{font:inherit;border:1px solid var(--divider-color);border-radius:20px;padding:9px 16px;background:var(--secondary-background-color);color:var(--primary-text-color);cursor:pointer}button[aria-pressed="true"]{background:var(--primary-color);color:var(--text-primary-color,#fff)}.tiles,.details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.details{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:14px}.tile{border:1px solid var(--divider-color);border-radius:16px;padding:15px;min-width:0}.label,.foot,.period{color:var(--secondary-text-color);font-size:.87rem;line-height:1.5}.value{font-size:1.55rem;font-weight:600;margin-top:8px;overflow-wrap:anywhere}.details .value{font-size:1.1rem}.warning{border-left:4px solid var(--warning-color);padding:10px 14px;background:var(--secondary-background-color);line-height:1.5}.foot{margin-top:18px}@media(max-width:750px){.tiles{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,minmax(0,1fr))}}</style><ha-card><h2>' + esc(c.title || 'Ferraris-Bilanz') + '</h2><div class="tabs">' + Object.entries(PERIODS).map(([p, label]) => '<button data-period="' + p + '" aria-pressed="' + (this.period === p) + '">' + label + '</button>').join('') + '</div>' + body + '<p class="foot">Berechnete Verrechnung: Netzbezug − Einspeisung. Solarwert: gesamte Erzeugung × Arbeitspreis. ' + (c.price_ct === undefined ? 'Arbeitspreis bitte in den Karteneinstellungen ergänzen.' : 'Arbeitspreis: ' + esc(new Intl.NumberFormat('de-DE', { maximumFractionDigits: 6 }).format(c.price_ct)) + ' ct/kWh.') + '<br>Abrechnungsbeginn: ' + esc(c.billing_day + '.' + c.billing_month + '.') + ' · in den Karteneinstellungen änderbar.<br>Ohne Grundpreis. Kein ausgelesener Ferraris-Zählerstand. Bewertung zu einem festen Arbeitspreis; Tarifwechsel erfordern eine getrennte Bewertung.</p></ha-card>';
+    }
+  }
+  const labels = { title: 'Titel', grid_import_total: 'Netzbezug, saldierter Gesamtzähler', grid_export_total: 'Einspeisung, saldierter Gesamtzähler', pv_totals: 'PV-Ertragszähler (jede Anlage einmal)', price_ct: 'Arbeitspreis (Cent/kWh)', billing_month: 'Abrechnungsbeginn: Monat', billing_day: 'Abrechnungsbeginn: Tag', start_period: 'Zeitraum beim Öffnen' };
+  WD.defineEditor('energy-cockpit-ferraris-card-editor', {
+    formOnly: true, needsSetup: () => false, steps: () => [],
+    form: () => ({ computeLabel: (s) => labels[s.name] || s.name, schema: [
+      { name: 'title', selector: { text: {} } },
+      ...['grid_import_total', 'grid_export_total'].map((name) => ({ name, required: true, selector: { entity: { domain: 'sensor' } } })),
+      { name: 'pv_totals', required: true, selector: { entity: { domain: 'sensor', multiple: true } } },
+      ...[['price_ct', 0, 1000, 'any'], ['billing_month', 1, 12, 1], ['billing_day', 1, 31, 1]].map(([name, min, max, step]) => ({ name, selector: { number: { min, max, step, mode: 'box' } } })),
+      { name: 'start_period', selector: { select: { options: Object.entries(PERIODS).map(([value, label]) => ({ value, label })) } } },
+    ] }),
+  });
+  if (!customElements.get('energy-cockpit-ferraris-card')) customElements.define('energy-cockpit-ferraris-card', FerrarisCard);
+  window.customCards = window.customCards || [];
+  if (!window.customCards.some((c) => c.type === 'energy-cockpit-ferraris-card')) window.customCards.push({ type: 'energy-cockpit-ferraris-card', name: 'Energy-Cockpit Ferraris-Bilanz', description: 'Nettoenergie und Solarwert mit deutscher Zeit und einstellbarem Abrechnungsbeginn', preview: false });
 })();
 
 

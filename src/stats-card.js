@@ -1,5 +1,6 @@
 /* energy-cockpit-stats-card (abgeleitet aus energy-stats-card v1.0.1) – Statistik: Geld, Amortisation, Grundlast, Monatsvergleich, Batterie */
 (() => {
+  const Date = EC_TIME.Date;
   const { nf, haNavigate, T, setLocale, cur, esc } = WD;
   const fEur = (v) => (v === null || v === undefined || !isFinite(v) ? '—' : nf(v, Math.abs(v) < 100 ? 2 : 0));
   const fKwh = (v, d) => (v === null || v === undefined || !isFinite(v) ? '—' : nf(v, typeof d === 'number' ? d : Math.abs(v) >= 100 ? 0 : 1));

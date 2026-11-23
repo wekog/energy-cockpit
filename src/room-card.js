@@ -2,6 +2,7 @@
    getrennt nach Bereichen (Zählern) UND nach Herkunft der Energie (Netz, Batterie, PV). Der Herkunfts-Mix wird stundenweise aus dem Haus-Mix bestimmt:
    in jeder Stunde bekommt jeder Verbraucher denselben Anteil aus Netz, Batterie und PV wie das ganze Haus. */
 (() => {
+  const Date = EC_TIME.Date;
   const { nf, esc, rgb, T, setLocale, cur } = WD;
   const monthShort = (m) => new Date(2020, m, 1).toLocaleDateString(WD.state.loc, { month: 'short' }).replace(/\.$/, '');
   const monthLong = (m) => new Date(2020, m, 1).toLocaleDateString(WD.state.loc, { month: 'long' });

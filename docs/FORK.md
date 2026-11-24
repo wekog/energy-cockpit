@@ -38,6 +38,10 @@ Dieses Modell bildet eine vom Anwender vorausgesetzte vollständige Verrechnung 
 
 Es werden ausschließlich gemeinsam vorhandene Statistikintervalle addiert. Fehlende Werte werden nicht als null behandelt. Fehlende abgeschlossene Intervalle ergeben einen deutlichen Teilbilanz-Hinweis; vorhandene Daten ab Herbst ergeben somit keine vollständige Jahresabrechnung ab Januar.
 
+## Zwei PV-Anlagen in der Verbraucherkarte
+
+Im erweiterten YAML-Bereich `home_energy` unterstützt dieser Fork neben `pv` auch `pv2` als zweiten PV-Ertragszähler. Beide werden für den physischen Strommix summiert; bei identischer ID wird nur einmal gezählt. Bezug und Einspeisung stehen weiterhin unter `import` und `export`. Die Originalkarten und ihre Gestaltung bleiben erhalten. Die neue Bilanzkarte nutzt dieselben Farbschemen (`theme`) und Kacheloberflächen wie das Original.
+
 ## Entwicklerupdates übernehmen
 
 Das Original bleibt als Git-Remote `upstream` bestehen. Vor einer Übernahme neue Upstream-Commits in einem Arbeitsbranch zusammenführen, Konflikte in den fünf Karten/Common-Zeitadaptern, Editor-Kit und Build-Reihenfolge prüfen, anschließend `npm test`, `npm run build` und `npm run check` ausführen. Die eigenständigen Dateien `german-time.js`, `ferraris.js` und `ferraris-card.js` begrenzen die Eingriffe in den Originalcode. Erst nach Prüfung ein eigenes Release mit `dist/energy-cockpit.js` veröffentlichen und dieses in HA installieren.

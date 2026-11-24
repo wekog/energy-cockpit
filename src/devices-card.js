@@ -412,7 +412,7 @@ header{display:flex;align-items:center;flex-wrap:wrap;position:relative;margin-b
       c.rooms.forEach((r) => (r.devices || []).forEach((d) => { if (d.energy && ids.indexOf(d.energy) < 0) ids.push(d.energy); }));
       (c.extra_consumers || []).forEach((x) => { if (x.energy && ids.indexOf(x.energy) < 0) ids.push(x.energy); });
       const he = c.home_energy || {};
-      ['pv', 'import', 'export', 'charge', 'discharge'].forEach((k) => { if (he[k] && ids.indexOf(he[k]) < 0) ids.push(he[k]); });
+      ['pv', 'pv2', 'import', 'export', 'charge', 'discharge'].forEach((k) => { if (he[k] && ids.indexOf(he[k]) < 0) ids.push(he[k]); });
       if (!ids.length || !h.callWS) return;
       // Startdatum je Zähler (z. B. Steckdose, die vorher ein anderes Gerät gemessen hat)
       const since = {};
@@ -429,7 +429,7 @@ header{display:flex;align-items:center;flex-wrap:wrap;position:relative;margin-b
         // Hausverbrauch und Netzanteil je Intervall: Haus = PV + Bezug - Einspeisung - Batterie laden + Batterie entladen
         const slot = {};
         const add = (k, f) => (r[he[k]] || []).forEach((x) => { const t = ts(x); (slot[t] = slot[t] || { pv: 0, imp: 0, exp: 0, chg: 0, dis: 0 })[f] += pos(x.change); });
-        add('pv', 'pv'); add('import', 'imp'); add('export', 'exp'); add('charge', 'chg'); add('discharge', 'dis');
+        add('pv', 'pv'); if (he.pv2 !== he.pv) add('pv2', 'pv'); add('import', 'imp'); add('export', 'exp'); add('charge', 'chg'); add('discharge', 'dis');
         let hImp = 0, hHome = 0;
         Object.keys(slot).forEach((t) => {
           const o = slot[t];

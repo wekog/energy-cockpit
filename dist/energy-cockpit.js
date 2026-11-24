@@ -4151,7 +4151,7 @@ header{display:flex;align-items:center;flex-wrap:wrap;position:relative;margin-b
       c.rooms.forEach((r) => (r.devices || []).forEach((d) => { if (d.energy && ids.indexOf(d.energy) < 0) ids.push(d.energy); }));
       (c.extra_consumers || []).forEach((x) => { if (x.energy && ids.indexOf(x.energy) < 0) ids.push(x.energy); });
       const he = c.home_energy || {};
-      ['pv', 'import', 'export', 'charge', 'discharge'].forEach((k) => { if (he[k] && ids.indexOf(he[k]) < 0) ids.push(he[k]); });
+      ['pv', 'pv2', 'import', 'export', 'charge', 'discharge'].forEach((k) => { if (he[k] && ids.indexOf(he[k]) < 0) ids.push(he[k]); });
       if (!ids.length || !h.callWS) return;
       // Startdatum je Zähler (z. B. Steckdose, die vorher ein anderes Gerät gemessen hat)
       const since = {};
@@ -4168,7 +4168,7 @@ header{display:flex;align-items:center;flex-wrap:wrap;position:relative;margin-b
         // Hausverbrauch und Netzanteil je Intervall: Haus = PV + Bezug - Einspeisung - Batterie laden + Batterie entladen
         const slot = {};
         const add = (k, f) => (r[he[k]] || []).forEach((x) => { const t = ts(x); (slot[t] = slot[t] || { pv: 0, imp: 0, exp: 0, chg: 0, dis: 0 })[f] += pos(x.change); });
-        add('pv', 'pv'); add('import', 'imp'); add('export', 'exp'); add('charge', 'chg'); add('discharge', 'dis');
+        add('pv', 'pv'); if (he.pv2 !== he.pv) add('pv2', 'pv'); add('import', 'imp'); add('export', 'exp'); add('charge', 'chg'); add('discharge', 'dis');
         let hImp = 0, hHome = 0;
         Object.keys(slot).forEach((t) => {
           const o = slot[t];
@@ -6774,11 +6774,12 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
       const c = { billing_month: 1, billing_day: 1, ...config };
       EC_FERRARIS.windowFor('billing', Date.now(), c.billing_month, c.billing_day);
       if (new Set([c.grid_import_total, c.grid_export_total, ...c.pv_totals]).size !== c.pv_totals.length + 2) throw new Error('Jede Energiequelle nur einmal auswählen');
+      WD.applyTheme(this, c, this.h);
       this.config = c; this.data = null; this.error = null; this.loadedKey = null; this.seq++;
       if (PERIODS[c.start_period]) this.period = c.start_period;
       this.draw(); if (this.isConnected) this.refresh();
     }
-    set hass(hass) { this.h = hass; if (this.isConnected) this.refresh(); }
+    set hass(hass) { this.h = hass; WD.applyTheme(this, null, hass); if (this.isConnected) this.refresh(); }
     connectedCallback() { this.draw(); clearInterval(this.timer); this.timer = setInterval(() => this.refresh(), 60000); this.refresh(); }
     disconnectedCallback() { clearInterval(this.timer); this.seq++; this.loadingKey = null; }
     getCardSize() { return 7; }
@@ -6811,14 +6812,15 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
         '<p class="period">' + esc(date(this.win.start)) + ' bis ' + esc(date(this.win.end)) + ' · Europe/Berlin · bis zum letzten gemeinsamen Statistikintervall</p>' +
         (d.home < 0 ? '<p class="warning">Die Quellen ergeben einen negativen Hausverbrauch. Messintervalle und Zuordnung prüfen.</p>' : '') +
         (d.net < 0 ? '<p>Der negative Nettowert zeigt einen rechnerischen Erzeugungsüberschuss im gewählten Zeitraum, keine zugesagte Auszahlung.</p>' : '');
-      this.shadowRoot.innerHTML = '<style>:host{display:block}ha-card{padding:22px;border-radius:26px;overflow:hidden}h2{font-size:1.2rem;margin:0 0 16px}.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}button{font:inherit;border:1px solid var(--divider-color);border-radius:20px;padding:9px 16px;background:var(--secondary-background-color);color:var(--primary-text-color);cursor:pointer}button[aria-pressed="true"]{background:var(--primary-color);color:var(--text-primary-color,#fff)}.tiles,.details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.details{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:14px}.tile{border:1px solid var(--divider-color);border-radius:16px;padding:15px;min-width:0}.label,.foot,.period{color:var(--secondary-text-color);font-size:.87rem;line-height:1.5}.value{font-size:1.55rem;font-weight:600;margin-top:8px;overflow-wrap:anywhere}.details .value{font-size:1.1rem}.warning{border-left:4px solid var(--warning-color);padding:10px 14px;background:var(--secondary-background-color);line-height:1.5}.foot{margin-top:18px}@media(max-width:750px){.tiles{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,minmax(0,1fr))}}</style><ha-card><h2>' + esc(c.title || 'Ferraris-Bilanz') + '</h2><div class="tabs">' + Object.entries(PERIODS).map(([p, label]) => '<button data-period="' + p + '" aria-pressed="' + (this.period === p) + '">' + label + '</button>').join('') + '</div>' + body + '<p class="foot">Berechnete Verrechnung: Netzbezug − Einspeisung. Solarwert: gesamte Erzeugung × Arbeitspreis. ' + (c.price_ct === undefined ? 'Arbeitspreis bitte in den Karteneinstellungen ergänzen.' : 'Arbeitspreis: ' + esc(new Intl.NumberFormat('de-DE', { maximumFractionDigits: 6 }).format(c.price_ct)) + ' ct/kWh.') + '<br>Abrechnungsbeginn: ' + esc(c.billing_day + '.' + c.billing_month + '.') + ' · in den Karteneinstellungen änderbar.<br>Ohne Grundpreis. Kein ausgelesener Ferraris-Zählerstand. Bewertung zu einem festen Arbeitspreis; Tarifwechsel erfordern eine getrennte Bewertung.</p></ha-card>';
+      this.shadowRoot.innerHTML = '<style>' + WD.themeCss() + ':host{display:block}ha-card{padding:22px 26px;border-radius:28px;overflow:hidden;background:radial-gradient(130% 90% at 50% 0%,var(--bg1) 0%,var(--bg0) 62%);border:1px solid rgba(var(--ov),.06);color:var(--txt);font-family:Inter,var(--ha-font-family-body,system-ui),sans-serif}h2{font-size:1.2rem;margin:0 0 16px}.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}button{font:inherit;border:1px solid var(--stroke);border-radius:20px;padding:9px 16px;background:var(--panel);color:var(--txt);cursor:pointer}button[aria-pressed="true"]{background:rgba(56,189,248,.18);color:rgb(56,189,248)}.tiles,.details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.details{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:14px}.tile{border:1px solid var(--stroke);border-radius:22px;background:linear-gradient(160deg,rgba(var(--ov),.07),rgba(var(--ov),.015)),var(--panel);padding:16px 20px;min-width:0}.label,.foot,.period{color:rgb(var(--mut));font-size:.87rem;line-height:1.5}.value{font-size:1.55rem;font-weight:850;font-variant-numeric:tabular-nums;margin-top:8px;overflow-wrap:anywhere}.details .value{font-size:1.1rem}.warning{border-left:4px solid var(--warning-color);padding:10px 14px;background:var(--panel);line-height:1.5}.foot{margin-top:18px}@media(max-width:750px){.tiles{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,minmax(0,1fr))}}</style><ha-card><h2>' + esc(c.title || 'Ferraris-Bilanz') + '</h2><div class="tabs">' + Object.entries(PERIODS).map(([p, label]) => '<button data-period="' + p + '" aria-pressed="' + (this.period === p) + '">' + label + '</button>').join('') + '</div>' + body + '<p class="foot">Berechnete Verrechnung: Netzbezug − Einspeisung. Solarwert: gesamte Erzeugung × Arbeitspreis. ' + (c.price_ct === undefined ? 'Arbeitspreis bitte in den Karteneinstellungen ergänzen.' : 'Arbeitspreis: ' + esc(new Intl.NumberFormat('de-DE', { maximumFractionDigits: 6 }).format(c.price_ct)) + ' ct/kWh.') + '<br>Abrechnungsbeginn: ' + esc(c.billing_day + '.' + c.billing_month + '.') + ' · in den Karteneinstellungen änderbar.<br>Ohne Grundpreis. Kein ausgelesener Ferraris-Zählerstand. Bewertung zu einem festen Arbeitspreis; Tarifwechsel erfordern eine getrennte Bewertung.</p></ha-card>';
     }
   }
-  const labels = { title: 'Titel', grid_import_total: 'Netzbezug, saldierter Gesamtzähler', grid_export_total: 'Einspeisung, saldierter Gesamtzähler', pv_totals: 'PV-Ertragszähler (jede Anlage einmal)', price_ct: 'Arbeitspreis (Cent/kWh)', billing_month: 'Abrechnungsbeginn: Monat', billing_day: 'Abrechnungsbeginn: Tag', start_period: 'Zeitraum beim Öffnen' };
+  const labels = { title: 'Titel', theme: 'Farbschema', grid_import_total: 'Netzbezug, saldierter Gesamtzähler', grid_export_total: 'Einspeisung, saldierter Gesamtzähler', pv_totals: 'PV-Ertragszähler (jede Anlage einmal)', price_ct: 'Arbeitspreis (Cent/kWh)', billing_month: 'Abrechnungsbeginn: Monat', billing_day: 'Abrechnungsbeginn: Tag', start_period: 'Zeitraum beim Öffnen' };
   WD.defineEditor('energy-cockpit-ferraris-card-editor', {
     formOnly: true, needsSetup: () => false, steps: () => [],
     form: () => ({ computeLabel: (s) => labels[s.name] || s.name, schema: [
       { name: 'title', selector: { text: {} } },
+      { name: 'theme', selector: { select: { options: WD.THEME_OPTIONS } } },
       ...['grid_import_total', 'grid_export_total'].map((name) => ({ name, required: true, selector: { entity: { domain: 'sensor' } } })),
       { name: 'pv_totals', required: true, selector: { entity: { domain: 'sensor', multiple: true } } },
       ...[['price_ct', 0, 1000, 'any'], ['billing_month', 1, 12, 1], ['billing_day', 1, 31, 1]].map(([name, min, max, step]) => ({ name, selector: { number: { min, max, step, mode: 'box' } } })),

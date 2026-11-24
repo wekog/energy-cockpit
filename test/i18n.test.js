@@ -46,9 +46,24 @@ load('src/i18n-fr.js');
 load('src/i18n-fi.js');
 context.WD.D3 = { css: '' };
 load('src/flow-card.js');
+load('src/devices-card.js');
 load('src/room-card.js');
 load('src/stats-card.js');
 const { WD } = context;
+
+test('consumer balance includes both PV plants without counting an identical source twice', async () => {
+  const Card = elements.get('energy-cockpit-devices-card');
+  for (const second of ['p2', 'p1']) {
+    const c = new Card(); c._render = () => {}; let request;
+    c._c = { rooms: [{ devices: [{ energy: 'device' }] }], home_energy: { pv: 'p1', pv2: second, import: 'i', export: 'e' } };
+    c._hass = { states: {}, callWS: async (r) => { request = r; return Object.fromEntries(Object.entries({ p1: 2, p2: 3, i: 4, e: 1, device: 2 }).map(([id, change]) => [id, [{ start: 0, change }]])); } };
+    await c._loadEnergy();
+    assert.equal(c._home, second === 'p2' ? 8 : 5);
+    assert.equal(c._gridk.device, second === 'p2' ? 1 : 1.6);
+    assert.equal(new Set(request.statistic_ids).size, request.statistic_ids.length);
+    assert.equal(request.units.energy, 'kWh');
+  }
+});
 
 test('selects Dutch from a regional Home Assistant language and formats numbers accordingly', () => {
   WD.setLocale({ language: 'nl-NL', config: { currency: 'EUR' } });

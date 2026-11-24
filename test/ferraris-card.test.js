@@ -8,6 +8,8 @@ function setup() {
   const elements = new Map();
   class HTMLElement {
     constructor() { this.isConnected = true; this.style = { setProperty() {}, removeProperty() {} }; }
+    getAttribute() { return null; }
+    setAttribute() {}
     attachShadow() { return this.shadowRoot = { innerHTML: '', addEventListener() {}, querySelector() { return null; }, querySelectorAll() { return []; } }; }
   }
   const context = vm.createContext({ HTMLElement, window: { addEventListener() {} }, document: { addEventListener() {} }, navigator: {}, customElements: { get: (k) => elements.get(k), define: (k, v) => elements.set(k, v) }, setInterval() {}, clearInterval() {} });

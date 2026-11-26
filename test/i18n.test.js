@@ -51,6 +51,13 @@ load('src/room-card.js');
 load('src/stats-card.js');
 const { WD } = context;
 
+test('upstream time tariffs use German hours including both DST offsets', () => {
+  const config = { grid_price_ct: 40, grid_price_times: [{ from: 22, to: 6, ct: 25 }] };
+  for (const [time, expected] of [['2026-11-26T04:30:00Z', 0.25], ['2026-11-26T05:30:00Z', 0.4], ['2026-07-26T03:30:00Z', 0.25], ['2026-07-26T04:30:00Z', 0.4]]) {
+    assert.equal(WD.priceNow({ states: {} }, config, null, new WD.Date(time)), expected);
+  }
+});
+
 test('consumer balance includes both PV plants without counting an identical source twice', async () => {
   const Card = elements.get('energy-cockpit-devices-card');
   for (const second of ['p2', 'p1']) {

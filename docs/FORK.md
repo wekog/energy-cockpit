@@ -1,6 +1,6 @@
 # Fork: deutsche Zeit und Ferraris-Bilanz
 
-Dieser Fork basiert auf msucimaker3112/energy-cockpit v0.45.2. Die ursprüngliche MIT-Lizenz und Autorenhinweise bleiben erhalten.
+Dieser Fork basiert auf msucimaker3112/energy-cockpit v0.48.0. Die ursprüngliche MIT-Lizenz und Autorenhinweise bleiben erhalten.
 
 ## Installation
 

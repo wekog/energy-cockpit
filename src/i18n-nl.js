@@ -45,7 +45,7 @@ WD.addTranslations('nl', {
   'why.none': 'Er zijn op dit moment geen gegevens voor een uitleg.', 'why.top': 'waarvan {n} {w}', 'bat.in2': ' (zonne-energie 2 <b>{pv}</b> · huis <b>{ac}</b>)',
   'xt.alarm': 'Alarm',
   'sky.sunny': 'Zonnig', 'sky.clear-night': 'Heldere nacht', 'sky.partlycloudy': 'Half bewolkt', 'sky.cloudy': 'Bewolkt', 'sky.fog': 'Mist', 'sky.rainy': 'Regen', 'sky.pouring': 'Stortregen', 'sky.snowy': 'Sneeuw', 'sky.snowy-rainy': 'Natte sneeuw', 'sky.lightning': 'Onweer', 'sky.lightning-rainy': 'Onweer met regen', 'sky.hail': 'Hagel', 'sky.windy': 'Winderig', 'sky.windy-variant': 'Winderig en bewolkt', 'sky.exceptional': 'Uitzonderlijk weer', 'sky.cloud': 'Bewolking', 'sky.wind': 'Wind', 'sky.nofc': 'Geen prognose beschikbaar van de weerentiteit',
-  'ban.tonet0': 'Stroom gaat naar het net', 'stat.home': 'Huis vandaag', 'close': 'Sluiten',
+  'ban.tonet0': 'Stroom gaat naar het net', 'stat.home': 'Huis vandaag', 'stat.cdaily': '{n} vandaag', 'stat.home.excl': 'Huis vandaag zonder {n}', 'status.on': 'AAN', 'status.off': 'UIT', 'status.unknown': 'Onbekend', 'close': 'Sluiten',
 
   'dev.title': 'Apparaten en verbruik', 'dev.room': 'Ruimte', 'dev.err': 'rooms ontbreekt: configureer ten minste één ruimte', 'dev.next': 'Volgende →',
   'dev.days': 'dagen', 'dev.p.day': 'Vandaag', 'dev.p.week': 'Week', 'dev.p.month': 'Maand', 'dev.p.year': 'Jaar',
@@ -62,7 +62,7 @@ WD.addTranslations('nl', {
   'st.title': 'Statistieken', 'st.err': 'pv_total en grid_import_total zijn vereist', 'st.today': 'Vandaag', 'st.next': 'Volgende →',
   'st.pvsav': 'Besparing door zonne-energie', 'st.feed': 'Opbrengst teruglevering', 'st.selfc': 'Zelfverbruik zonne-energie', 'st.cost': 'Kosten netstroom', 'st.aut': 'Zelfvoorziening',
   'st.amo': 'Terugverdientijd zonne-installatie', 'st.base': 'Basisverbruik (nacht)', 'st.monthly': 'Opbrengst zonne-energie per maand', 'st.record': 'Recorddag',
-  'st.eff': 'Rendement', 'st.bat': 'Batterij', 'st.sum': 'Totaal', 'st.solar': 'Zonne-energie', 'st.recon': 'op {d}', 'st.cycles': 'Batterijcycli', 'st.temp': 'Temperatuur', 'st.soh': 'Gezondheid (SOH)', 'st.pvall': 'Zonne-energie totaal',
+  'st.eff': 'Rendement', 'st.bat': 'Batterij', 'st.sum': 'Totaal', 'st.solar': 'Zonne-energie', 'st.recon': 'op {d}', 'st.cycles': 'Batterijcycli', 'st.temp': 'Temperatuur', 'st.soh': 'Gezondheid', 'st.pvall': 'Zonne-energie totaal',
   'st.r.pv': 'Opwekking', 'st.r.self': 'Direct gebruikt', 'st.r.fed': 'Teruggeleverd', 'st.r.drawn': 'Afgenomen', 'st.r.selfq': 'Zelfverbruik', 'st.r.cons': 'Verbruik',
   'st.earned': "<b>{e}</b><i>{cur}</i><small>van {i} {cur} investering</small>", 'st.eta': "Rendement ca. <b>{y} {cur}</b> per jaar", 'st.paid': '<b>Installatie heeft zichzelf terugverdiend 🎉</b>', 'st.eta.far': 'Nog onvoldoende gegevens voor een betrouwbare prognose', 'st.price.warn': '⚠ De stroomprijs is slechts {p} ct/kWh: dit veld verwacht <b>centen</b> (bijvoorbeeld 23.88), geen euro’s.',
   'st.glcost': "<b>{x}</b><i>{cur}</i><small>per jaar</small>", 'st.gltip': 'Laagste uurgemiddelde tussen 00:00 en 05:00, mediaan van de laatste {n} nachten', 'st.gl100': "100 W minder ≈ {x} {cur} per jaar",

@@ -123,6 +123,7 @@ Mit manueller Installation und Fehlerbehebung: [Installationsanleitung](https://
 - Leistungssensoren in W, kW oder MW und Energiesensoren in Wh, kWh oder MWh. Die Karten erkennen die Einheit und rechnen selbst um.
 - Für Verlauf und Kosten: Energiezähler mit Langzeitstatistik (`state_class: total_increasing`).
 - Empfohlen ist der Ansichtstyp **Panel** (eine Karte, volle Breite). In *Abschnitte*-Ansichten füllt die Karte nur die Breite des Abschnitts.
+- Für ein **Wandtablet oder einen Fernseher im Vollbild** (ohne Seitenleiste und Kopfzeile) hilft die HACS-Erweiterung **Kiosk Mode**: Hänge `?kiosk` an die Adresse des Dashboards, siehe [Installation](https://github.com/msucimaker3112/energy-cockpit/blob/main/docs/INSTALLATION.md).
 
 ## Auch für ioBroker
 
@@ -206,7 +207,12 @@ consumers:
   - { entity: sensor.waermepumpe_leistung, name: Wärmepumpe, size: gross }
   - { entity: sensor.wallbox, name: Wallbox, size: gross }
 label_size: 1.5     # nur Namen und Zusatzwerte größer
+home_size: 1.5      # nur die Zahl über dem Haus
+home_label_size: 1.5       # „Hausverbrauch“ unter der Zahl
+home_percentage_size: 1.4  # Prozente über der Zahl
 ```
+
+Für ältere Wandtablets: `animations: off` schaltet alle Bewegungen ab und spart Rechenleistung.
 
 ![Große Kacheln für Wärmepumpe und Wallboxen](https://raw.githubusercontent.com/msucimaker3112/energy-cockpit/main/docs/img/flow-grosse-kacheln.png)
 
@@ -288,7 +294,7 @@ Das meiste stellst du im Assistenten ein. Die genauen Einstellungen stehen in de
 | **Jahresziel für den Netzbezug** | Kachel mit Fortschritt, Soll bis heute, Hochrechnung und Abweichung in kWh und Euro, das Soll gleichmäßig oder nach dem Vorjahr | `budget_kwh`, `budget_profile` |
 | **Zwei Zähler in Reihe** | Rechnet die Differenz, auch mit eigenem Tarif | `minus`, `energy_minus`, siehe [Anleitung](https://github.com/msucimaker3112/energy-cockpit/blob/main/docs/ZWEI-ZAEHLER.md) |
 | **Daten aus der Zeit vor Home Assistant** | Langzeit-Ansicht mit importierter PV-Historie, bereits erwirtschaftete Beträge | `long_term`, `pv_history`, `earned_before_eur` |
-| **Wandtablet** | Die Karte passt sich der Bildschirmhöhe an | Standard, aus mit `fit_screen: false` |
+| **Wandtablet** | Die Karte passt sich der Bildschirmhöhe an. Vollbild ohne Seitenleiste mit der HACS-Erweiterung Kiosk Mode (`?kiosk` an die Adresse) | Standard, aus mit `fit_screen: false` |
 
 <details>
 <summary><b>Bilder: Speicher und Solaranlagen</b></summary>
@@ -450,11 +456,13 @@ Fehlt dir etwas oder passt etwas bei dir nicht? Schreib ein [Issue](https://gith
 
 - **Energy flow:** animated solar, grid, one or more batteries (with discharge limit and forecast), home and consumers, surplus hint, second PV system (e.g. balcony solar). Optional 3D view with `style: 3d`.
 - **One card, two views:** with `compact: auto` the card shows a compact overview on phones and the full view on tablets and PCs. Tap a room on the phone to see all its devices.
+- **Full screen on a wall tablet or TV:** the cards cannot hide the sidebar and header themselves, but the HACS add-on **Kiosk Mode** can. Append `?kiosk` to the dashboard address (`?hide_sidebar` or `?hide_header` for only one of them). See [docs/INSTALLATION.md](https://github.com/msucimaker3112/energy-cockpit/blob/main/docs/INSTALLATION.md).
 - **New: gas and water.** Own tiles for a gas boiler (heating and hot water, kWh or m³) and water (flow and daily use), each with a line to the house. They do not count towards electricity. In 3D: a boiler with a flame and a water meter (`gas`, `water`).
 - **New: the card explains itself.** A "?" on the grid, solar and battery tiles tells you in plain language why power is coming from the grid or going to it, why solar is producing so little and what the battery is doing: which consumers use it, why the battery is not delivering, why there is no solar (night, weather, forecast). Rule-based, no AI, no cloud. Turn it on with `why: true`.
 - **Optional extras:** a weather band under the header (`weather`), extra values and an alarm on the solar, grid and battery tiles (`extra`, `alarm`), your own colors (`colors`), large consumer tiles (`size: gross`), separate label size (`label_size`) and a storage with its own solar modules such as the Anker SOLIX Solarbank (`pv2.to_battery`). See the [configuration](https://github.com/msucimaker3112/energy-cockpit/blob/main/docs/KONFIGURATION.md) (German).
 - **Devices & consumption, statistics** (savings, self-sufficiency, payback, cost per consumer) and **room billing** (cost per room, source grid/battery/PV, base load, monthly archive).
 - **New: time-of-use and dynamic tariffs in the statistics.** With `hourly_pricing: true` and a `grid_price` sensor with long-term statistics, grid cost, solar savings and feed-in revenue are priced hour by hour at that hour's price, so cheap overnight charging shows its real cost. Hours where the price changes mid-hour (e.g. at 23:30) are priced in 5-minute slices while Home Assistant still keeps short-term statistics (the recorder's `purge_keep_days`, 10 days by default). Solar self-use is counted per hour, so battery export outside solar hours no longer reduces it. It is off by default, and without price statistics nothing changes.
+- **Older wall tablets:** `animations: off` stops all motion, including the counting numbers, and roughly halves the card's CPU load. The card also pauses its animations while it is not visible.
 
 **Install:** Energy-Cockpit is in the default HACS store. Open HACS, search for *energy-cockpit*, download it and reload the browser. Then add a card and search for *Energy-Cockpit*.
 

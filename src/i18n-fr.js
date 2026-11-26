@@ -68,7 +68,7 @@ WD.addTranslations('fr', {
   'st.eff': "Rendement batterie",
   'st.cycles': "Cycles complets",
   'st.temp': "Température batterie",
-  'st.soh': "État de santé (SOH)",
+  'st.soh': "Santé",
   'st.pvall': "PV total",
   'st.earned': "<b>{e}</b><i>{cur}</i><small>sur {i} {cur} investis</small>",
   'st.eta': "Gain env. <b>{y} {cur}</b> par an",
@@ -268,6 +268,11 @@ WD.addTranslations('fr', {
   'xt.alarm': "Alarme",
   'ban.tonet0': "Courant injecté au réseau",
   'stat.home': "Maison aujourd'hui",
+  'stat.cdaily': "{n} aujourd'hui",
+  'stat.home.excl': "Maison aujourd'hui sans {n}",
+  'status.on': "MARCHE",
+  'status.off': "ARRÊT",
+  'status.unknown': "Inconnu",
   'close': "Fermer",
 
   // --- Météo (sky.*) ---

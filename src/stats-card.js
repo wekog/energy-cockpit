@@ -256,7 +256,9 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
       { const bf = parseFloat(String(c.grid_base_fee).replace(',', '.')); this._c._bf = bf > 0 ? bf : 0; }
       this._c._bfh = lst(c.grid_base_fee_history).filter((x) => x && x.until && !isNaN(parseFloat(String(x.eur).replace(',', '.')))).map((x) => ({ until: String(x.until), eur: Math.max(0, parseFloat(String(x.eur).replace(',', '.'))) })).sort((a, b) => (a.until < b.until ? -1 : 1));
       // hourly_pricing (optional): Geldkacheln Stunde für Stunde mit dem Stundenmittel des Preis-Sensors. Standard: aus, nur mit true und grid_price als Sensor
-      this._c._hp = c.hourly_pricing === true && typeof c.grid_price === 'string' && !!c.grid_price.trim();
+      // grid_price_times (optional, #105): Preise nach Uhrzeit. Schaltet die Rechnung Stunde für Stunde ein, auch ohne Preis-Sensor
+      this._c._pt = WD.priceTimes(c.grid_price_times);
+      this._c._hp = (c.hourly_pricing === true && typeof c.grid_price === 'string' && !!c.grid_price.trim()) || this._c._pt.length > 0;
       this._ccY = null; this._ccV = null; this._hpV = null; this._hpOld = null; this._h5 = {};
       // grid2_total (optional, #29): zweiter Netzzähler (z. B. Wärmepumpe mit eigenem Tarif, nur Bezug) in kWh. Eigener Preis: grid2_price oder grid2_price_ct, sonst der normale
       this._c._g2 = typeof c.grid2_total === 'string' && c.grid2_total ? c.grid2_total : '';
@@ -369,6 +371,15 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
           ${m('aut', T('st.aut'), 'var(--home)')}
         </div>
         <div class="dhint" data-f="dHint" style="display:none"></div>
+        ${c._cc.length ? `<div class="panel cc" style="display:none">
+          <div class="cc-head"><span class="lbl" style="--c:var(--imp)"><i></i>${T('st.cc.title')} · <span data-f="ccP" style="margin-left:4px"></span></span><span class="cc-sum" data-f="ccSum"></span></div>
+          <div class="cc-grid">${c._cc.map((x, i) => `<div class="ccard" data-c="${i}" style="--c:${WD.rgb(x.color, '167,139,250')}">
+            <div class="cc-top"><span class="ico"><ha-icon icon="${esc(x.icon || 'mdi:flash')}"></ha-icon></span><div class="cc-name"><b>${esc(x.name || x.energy || x.grid || T('st.cc.group'))}</b><small>${T(x.grid ? 'st.cc.meas' : 'st.cc.est')}</small></div><span class="cc-live" data-f="ccL${i}"></span></div>
+            <div class="cc-main"><div><div class="cc-val"><span class="num" data-t="ccC${i}">—</span><span class="unit">${cur()}</span></div><span class="cc-cap">${T('st.cc.cost')}</span></div><div class="cc-sav"><div class="cc-val s"><span class="num" data-t="ccS${i}">—</span><span class="unit">${cur()}</span></div><span class="cc-cap">${T('st.cc.saved')}</span></div></div>
+            <div class="cc-bar">${['--imp', '--bat', '--pv'].map((s) => `<i style="--s:var(${s})"></i>`).join('')}</div>
+            <div class="cc-leg" data-f="ccK${i}"></div>${x._parts ? `<div class="cc-parts" data-f="ccD${i}"></div>` : ''}
+          </div>`).join('')}</div>
+        </div>` : ''}
         <div class="duo">
           <div class="panel amo"><span class="lbl" style="--c:var(--sav)"><i></i>${T('st.amo')}</span>
             <div class="big"><span class="num" data-t="amo">—</span><span class="unit">%</span><span class="earn" data-f="amoEarned">—</span></div>
@@ -393,15 +404,6 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
           </div>
           <div class="hint" data-f="budHint"></div>
         </div>` : ''}
-        ${c._cc.length ? `<div class="panel cc" style="display:none">
-          <div class="cc-head"><span class="lbl" style="--c:var(--imp)"><i></i>${T('st.cc.title')} · <span data-f="ccP" style="margin-left:4px"></span></span><span class="cc-sum" data-f="ccSum"></span></div>
-          <div class="cc-grid">${c._cc.map((x, i) => `<div class="ccard" data-c="${i}" style="--c:${WD.rgb(x.color, '167,139,250')}">
-            <div class="cc-top"><span class="ico"><ha-icon icon="${esc(x.icon || 'mdi:flash')}"></ha-icon></span><div class="cc-name"><b>${esc(x.name || x.energy || x.grid || T('st.cc.group'))}</b><small>${T(x.grid ? 'st.cc.meas' : 'st.cc.est')}</small></div><span class="cc-live" data-f="ccL${i}"></span></div>
-            <div class="cc-main"><div><div class="cc-val"><span class="num" data-t="ccC${i}">—</span><span class="unit">${cur()}</span></div><span class="cc-cap">${T('st.cc.cost')}</span></div><div class="cc-sav"><div class="cc-val s"><span class="num" data-t="ccS${i}">—</span><span class="unit">${cur()}</span></div><span class="cc-cap">${T('st.cc.saved')}</span></div></div>
-            <div class="cc-bar">${['--imp', '--bat', '--pv'].map((s) => `<i style="--s:var(${s})"></i>`).join('')}</div>
-            <div class="cc-leg" data-f="ccK${i}"></div>${x._parts ? `<div class="cc-parts" data-f="ccD${i}"></div>` : ''}
-          </div>`).join('')}</div>
-        </div>` : ''}
         <div class="panel chart">
           <div class="chart-head"><span class="lbl" style="--c:var(--pv)"><i></i>${T('st.monthly')}</span>
             ${c._lt ? '<span class="yrnav"><span class="yb" data-yr="-1" role="button" aria-label="−1">‹</span><span class="yv" data-f="yrNav"></span><span class="yb" data-yr="1" role="button" aria-label="+1">›</span></span>' : ''}
@@ -416,7 +418,7 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
           <div class="stat"><span class="lbl" style="--c:var(--bat)"><i></i>${T('st.bat')}</span><div class="sv"><span>${T('st.eff')}</span><b data-f="eff">—</b></div></div>
           <div class="stat"><span class="lbl" style="--c:var(--bat)"><i></i>${T('st.cycles')}</span><div class="sv"><span>${T('st.sum')}</span><b data-f="cyc">—</b></div></div>
           <div class="stat"><span class="lbl" style="--c:var(--bat)"><i></i>${T('st.bat')}</span><div class="sv"><span>${T('st.temp')}</span><b data-f="temp">—</b></div></div>
-          ${c.battery_soh ? `<div class="stat"><span class="lbl" style="--c:var(--bat)"><i></i>${T('st.bat')}</span><div class="sv"><span>${T('st.soh')}</span><b data-f="soh">—</b></div></div>` : ''}
+          ${c.battery_soh ? `<div class="stat"><span class="lbl" style="--c:var(--bat)"><i></i>${T('st.bat')} (SOH)</span><div class="sv"><span>${T('st.soh')}</span><b data-f="soh">—</b></div></div>` : ''}
           <div class="stat"><span class="lbl" style="--c:var(--pv)"><i></i>${T('st.solar')}</span><div class="sv"><span>${T('st.sum')}</span><b data-f="pvAll">—</b></div></div>
         </footer>
         <div class="note" data-f="note"></div>
@@ -443,7 +445,9 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
       const house = [c.pv_total, c.grid_import_total, c.grid_export_total].concat(c._chg, c._dis).filter(Boolean);
       const mine = (x) => (x.grid ? [x.grid, x.battery, x.pv] : x._parts ? x._parts.map((q) => q.entity) : [x.energy]).filter(Boolean);
       const ids = [...new Set(house.concat(c._g2 ? [c._g2] : [], ...c._cc.map(mine)))];
-      const priceId = typeof c.grid_price === 'string' ? c.grid_price : null, nowEur = WD.price(h, c.grid_price, c.grid_price_ct, 0);
+      // grid_price_times (#105): der Preis kommt aus den Uhrzeiten, nicht aus einem Sensor. VP steht für diesen berechneten Preis je Stunde
+      const VP = '__grid_price_times__', pt = c._pt || [];
+      const priceId = pt.length ? VP : typeof c.grid_price === 'string' ? c.grid_price : null, nowEur = WD.price(h, c.grid_price, c.grid_price_ct, 0);
       // grid2_total (z. B. Niedertarif-Zaehler): Bezug zaehlt zum Netzbezug, bewertet mit grid2_price, sonst mit dem normalen Preis
       const price2 = WD.price(h, c.grid2_price, c.grid2_price_ct, nowEur);
       const stat = (period, types, list, start, end) => h.callWS({ type: 'recorder/statistics_during_period', start_time: start.toISOString(), ...(end ? { end_time: end.toISOString() } : {}), period, statistic_ids: list, types, ...WD.statUnits(c) });
@@ -480,6 +484,15 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
       const means = async (start, end, id = priceId, split = null) => {
         const out = {};
         if (!id) return out;
+        if (id === VP) {
+          // Preis je Stunde aus den Uhrzeiten, sonst früherer Preis (grid_price_history), sonst der normale Preis. Bis einschließlich der laufenden Stunde
+          const e = end ? +end : Date.now();
+          for (let t = Math.floor(+start / 36e5) * 36e5; t <= e; t += 36e5) {
+            const hit = WD.timesPrice(pt, new Date(t).getHours()), day = ymd(t), ph = c._ph.find((x) => day.slice(0, x.until.length) <= x.until);
+            out[t] = hit !== null ? hit : ph ? ph.eur : nowEur;
+          }
+          return out;
+        }
         const r = await stat('hour', split ? ['mean', 'min', 'max'] : ['mean'], [id], start, end).catch(() => ({}));
         (r[id] || []).forEach((x) => {
           if (typeof x.mean === 'number') out[stamp(x)] = x.mean;
@@ -496,7 +509,7 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
       // (nach kWh gewichteter Preis), null ohne Bezug bzw. Einspeisung. Die Kurzzeitstatistik gibt es nur purge_keep_days lang (Standard 10 Tage),
       // ältere Stunden behalten das Stundenmittel. Abgeschlossene Stunden merkt sich die Karte (_h5). Neueste zuerst, nahe Stunden in einer Abfrage;
       // ist ein Abschnitt älter als alle mit Daten leer, ist der Rest schon gelöscht
-      const HR = 36e5, ids5 = [c.grid_import_total, c.grid_export_total, priceId, feedId].filter(Boolean);
+      const HR = 36e5, ids5 = [c.grid_import_total, c.grid_export_total, priceId === VP ? null : priceId, feedId].filter(Boolean);
       const slice5 = async (split, m, fm) => {
         const out = {}, todo = [], done = (t) => t + HR <= Date.now();
         [...split].sort((a, b) => b - a).forEach((t) => { const x = this._h5[t]; if (x === undefined || !done(t)) todo.push(t); else if (x) out[t] = x; });
@@ -969,7 +982,7 @@ footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gri
     _render() {
       const c = this._c, h = this._hass;
       if (!h) return;
-      const price = WD.price(h, c.grid_price, c.grid_price_ct, 0), feed = WD.price(h, c.feed_in, c.feed_in_ct, 0), CUR = cur();
+      const price = WD.priceNow(h, c, 0), feed = WD.price(h, c.feed_in, c.feed_in_ct, 0), CUR = cur();
       this.shadowRoot.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t.dataset.p === this._period));
       this._renderCC(price);
       this._renderBud(price);

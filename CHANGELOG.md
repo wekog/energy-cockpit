@@ -1,5 +1,37 @@
 # Änderungsprotokoll
 
+## 0.48.0-wekog.1
+- Upstream 0.46.0, 0.47.0 und 0.48.0 übernommen; Originalgestaltung und neue Einstellungsfelder bleiben erhalten.
+- Feste deutsche Kalenderzeit, Ferraris-Bilanz und beide PV-Quellen der Verbraucherkarte bleiben erhalten.
+- Zusätzliche Prüfung: Zeitpreisfenster folgen Europe/Berlin im Sommer und Winter.
+
+## 0.48.0
+- **Energiefluss, Schriftgrößen am Haus (optional, `home_label_size` und `home_percentage_size`, Wunsch von Cle2301, [#102](https://github.com/msucimaker3112/energy-cockpit/issues/102)):** Die Beschriftung „Hausverbrauch“ unter der Zahl und die Prozente darüber (Solar, Batterie, Netz) lassen sich jetzt getrennt vergrößern, unabhängig von `home_size`. Zum Beispiel `home_label_size: 1.5`. Auch in der 3D-Ansicht und im Editor.
+- **Energiefluss, Netz mit zwei Sensoren (optional, `grid.power_import` und `grid.power_export`, Wunsch von sholter42, [#111](https://github.com/msucimaker3112/energy-cockpit/issues/111)):** Für Anlagen, die Bezug und Einspeisung als zwei positive Sensoren liefern statt einem mit Vorzeichen (zum Beispiel Growatt über Solax Modbus). Die Karte rechnet Bezug minus Einspeisung. Auch im Assistenten und im Editor.
+- **Energiefluss, Animationen aus (optional, `animations: off`):** Schaltet alle Bewegungen ab, auch das Hochzählen der Zahlen, unabhängig von der Einstellung am Gerät. Das entlastet ältere Wandtablets: In der Messung sinkt die Rechenlast der Karte auf etwa die Hälfte, in der 3D-Ansicht auf ein Drittel.
+- **Energiefluss, weniger Rechenlast:** Ist die Karte nicht zu sehen (weggescrollt, anderer Browser-Tab, Bildschirm aus), hält sie ihre Animationen an und zählt Zahlen nicht hoch.
+- **Statistik, Gesundheit der Batterie (Wunsch von PV-Joe, [#95](https://github.com/msucimaker3112/energy-cockpit/issues/95)):** Die Kachel heißt jetzt „Batterie (SOH)“ mit der Beschriftung „Gesundheit“. So passt sie am Handy in eine Zeile mit dem Wert, wie die anderen Batterie-Kacheln.
+- **Tests:** Neue Seite `test/v0480-wishes.html`.
+
+## 0.47.0
+- **Energiefluss, Prognose auch für die zweite Anlage (optional, `pv2.forecast`, `pv2.forecast_tomorrow`, `pv2.forecast_day_after`, Wunsch von SVHennenbach, [#104](https://github.com/msucimaker3112/energy-cockpit/issues/104)):** Die Kachel der zweiten Anlage zeigt ihre eigene „Prognose heute“. Die Kacheln unten (morgen, übermorgen und mit `forecast_swap` auch heute) zeigen die Summe beider Anlagen. Hat nur eine Anlage einen Sensor, zählt nur diese. Auch die Erklärung „Warum?“ rechnet für morgen mit der Summe. Ohne die neuen Felder bleibt alles wie bisher. Im Editor unter „Solar“ als „Zweite Anlage: Prognose …“.
+- **Preise nach Uhrzeit (optional, `grid_price_times`, Wunsch von Facebook-Nutzern, [#105](https://github.com/msucimaker3112/energy-cockpit/issues/105)):** Eine Liste wie `- {from: 0, to: 5, ct: 25.5}` gibt Zeiten mit eigenem Preis an (auch über Mitternacht). Der Energiefluss rechnet die Kosten pro Stunde damit, die Statistik rechnet Stromkosten, Ersparnis und Kosten pro Verbraucher Stunde für Stunde, auch rückwirkend. Im Assistenten bei „Preise“ (Energiefluss und Statistik).
+- **Energiefluss, Tageswert je Verbraucher (optional, `consumers[].daily`, `daily_name`, `daily_from_home`, [#106](https://github.com/msucimaker3112/energy-cockpit/issues/106)):** Eigene Kachel „Wallbox heute“ unten in der Karte. Mit `daily_from_home: true` zieht die Karte den Wert von „Haus heute“ ab („Haus heute ohne Wallbox“).
+- **Energiefluss, Preis je Verbraucher (optional, `consumers[].price_ct`):** Zeigt die Kosten pro Stunde in der Kachel, zum Beispiel „0,19 €/h“. Nützlich bei zwei Zählern mit verschiedenen Tarifen.
+- **Energiefluss, Statuskachel EIN/AUS (optional, `secondary` ohne Leistungssensor, `secondary_mode: status`, [#108](https://github.com/msucimaker3112/energy-cockpit/issues/108)):** Geräte ohne Leistungsmessung (Schalter, `input_boolean`, Binärsensor, Text) zeigen EIN, AUS oder Unbekannt. Die Kachel zählt nicht zum Verbrauch. Im Assistenten: „Statuskachel ohne Leistungssensor hinzufügen“.
+- **Energiefluss, Vorzeichen für Verbraucher (optional, `consumers[].invert`, auch in Gruppen):** Für Sensoren, die den Verbrauch negativ melden. Bisher zeigte die Kachel nichts, und „Nicht erfasst“ wurde um das Doppelte zu groß.
+- **Energiefluss, Batterie ([#107](https://github.com/msucimaker3112/energy-cockpit/issues/107)):** Die Option heißt jetzt „Laden und Entladen vertauschen (Vorzeichen umkehren)“ mit einem Hinweis, woran man sie erkennt. Dokumentation ergänzt.
+- **Fehler behoben, Energiefluss:** Ist `grid2.entity` derselbe Sensor wie `grid.entity`, zählte der Bezug doppelt (Ring zu groß). Die Karte ignoriert `grid2` jetzt in diesem Fall.
+- **Dokumentation:** `plus` bei Verbrauchern wirkt nur zusammen mit `minus`. Beispiel für Z1/Z2 mit zwei Preisen in der Anleitung „Zwei Zähler in Reihe“.
+- **Tests:** `test/v0453-wishes.html` prüft die Summen, die einzelnen Anlagen und den Tausch `forecast_swap`. Neue Seite `test/v0470-big.html` prüft Preise nach Uhrzeit (Funktionen und Statistik), Tageswert mit Abzug, Statuskacheln, `invert`, den `grid2`-Schutz, den Preis je Verbraucher und die Felder im Assistenten.
+
+## 0.46.0
+- **Energiefluss, Anlagenleistung in Prozent (optional, `pv.kwp` und `pv2.kwp`, Wunsch von PV-Joe, [#103](https://github.com/msucimaker3112/energy-cockpit/issues/103)):** Trägst du die Anlagenleistung in kWp ein (zum Beispiel `kwp: 9.8`), zeigt die Solar-Kachel rechts neben der Leistung in Prozent, wie viel davon gerade erzeugt wird. Das gilt auch in der 3D-Ansicht und für die zweite Anlage. Ohne Angabe bleibt alles wie bisher. Im Editor unter „Solar“ als „Anlagenleistung (kWp)“.
+- **Energiefluss, einzelne Strings im Editor (Wunsch von 84c7958vct-pixel, [#101](https://github.com/msucimaker3112/energy-cockpit/issues/101)):** Bis zu 8 Strings lassen sich jetzt direkt im Assistenten eintragen („String 1: Leistung“ und „String 1: Name“, unter „Solar“), nicht mehr nur im YAML. Die Solar-Kachel zeigt pro String eine Zeile mit Name und Leistung. Leere Einträge fallen weg. Für die zweite Anlage (`pv2.strings`) gibt es die Felder im Formular unter „Alle Felder“.
+- **Statistik, Reihenfolge (Wunsch von PV-Joe, [#95](https://github.com/msucimaker3112/energy-cockpit/issues/95)):** „Kosten pro Verbraucher“ steht jetzt direkt unter den vier Geldkacheln, weil beide Kosten zeigen. Amortisation und Grundlast folgen darunter.
+- **Dokumentation, Vollbild ohne Seitenleiste:** In der Installationsanleitung und im README steht jetzt, wie ein Wandtablet oder Fernseher ohne Seitenleiste und Kopfzeile läuft: mit der HACS-Erweiterung Kiosk Mode und `?kiosk` (oder `?hide_sidebar`, `?hide_header`) an der Adresse des Dashboards.
+- **Tests:** Neue Seite `test/v0453-wishes.html` (Strings, kWp in Prozent, Reihenfolge in der Statistik, Felder im Assistenten).
+
 ## 0.45.2
 - **Energiefluss, Größe der Zahl über dem Haus (optional, `home_size`, Wunsch von Cle2301, [#102](https://github.com/msucimaker3112/energy-cockpit/issues/102)):** Mit einer Zahl (zum Beispiel `home_size: 1.5`) wird nur die Zahl über dem Haus größer, auch in der 3D-Ansicht und in der Kurzansicht. Gut für Wandtablets. Ohne Angabe bleibt alles wie bisher. Im Editor unter „Größe der Zahl über dem Haus“.
 - **Statistik, Gesundheit der Batterie (optional, `battery_soh`, Wunsch von PV-Joe, [#100](https://github.com/msucimaker3112/energy-cockpit/issues/100)):** Ein Sensor mit dem Gesundheitszustand (SOH) in Prozent erscheint als eigene Kachel in der Fußzeile. Ohne Sensor ändert sich nichts.
